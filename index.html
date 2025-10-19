@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector QR - UE Guaytacama</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 30px;
+            position: relative;
+        }
+        
+        .logo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 80px;
+            height: auto;
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .header-title {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header-subtitle {
+            color: #764ba2;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .offline-badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        
+        #reader {
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: #000;
+            position: relative;
+        }
+        
+        video {
+            width: 100%;
+            display: block;
+            border-radius: 15px;
+        }
+        
+        .scan-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 3px solid #00ff00;
+            border-radius: 10px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+        
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #00ff00;
+            animation: scan 2s linear infinite;
+        }
+        
+        @keyframes scan {
+            0%, 100% { top: 0; }
+            50% { top: 100%; }
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: none;
+        }
+        
+        .result-container.active {
+            display: block;
+        }
+        
+        .result-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .result-info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .result-info p {
+            color: #666;
+            margin: 8px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .result-info strong {
+            color: #333;
+        }
+        
+        .icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .status {
+            text-align: center;
+            color: #666;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        
+        .camera-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            background: white;
+        }
+        
+        .error-message {
+            background: #ff4444;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://irvinportero-spec.github.io/generador-qr/logo.png" alt="Logo UE Guaytacama" class="logo">
+        <div class="offline-badge">✓ 100% Offline</div>
+        <h1 class="header-title">UE GUAYTACAMA</h1>
+        <p class="header-subtitle subtitle">Área Técnica en Contabilidad</p>
+        <h1>📷 Lector de QR</h1>
+        <p class="subtitle">Escanea códigos QR con tu cámara</p>
+        
+        <select id="cameraSelect" class="camera-select" style="display: none;">
+            <option value="">Selecciona una cámara</option>
+        </select>
+        
+        <div id="reader">
+            <video id="video" playsinline></video>
+            <div class="scan-overlay">
+                <div class="scan-line"></div>
+            </div>
+        </div>
+        
+        <div class="status" id="status">Presiona el botón para iniciar la cámara</div>
+        
+        <button id="startBtn" class="btn">📸 Iniciar Cámara</button>
+        <button id="stopBtn" class="btn" style="display: none; background: #dc3545;">⏹️ Detener Cámara</button>
+        
+        <div class="result-container" id="resultContainer">
+            <div class="icon">✅</div>
+            <h3 style="text-align: center; color: #667eea;">¡Código QR Detectado!</h3>
+            <div class="result-info" id="resultInfo"></div>
+            <button class="btn" onclick="scanAgain()" style="background: #28a745;">🔄 Escanear Otro</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const status = document.getElementById('status');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultInfo = document.getElementById('resultInfo');
+        const cameraSelect = document.getElementById('cameraSelect');
+        
+        let stream = null;
+        let scanning = false;
+        let cameras = [];
+        
+        // Detectar cámaras disponibles
+        async function getCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                cameras = devices.filter(device => device.kind === 'videoinput');
+                
+                if (cameras.length > 1) {
+                    cameraSelect.style.display = 'block';
+                    cameraSelect.innerHTML = '<option value="">Selecciona una cámara</option>';
+                    cameras.forEach((camera, index) => {
+                        const option = document.createElement('option');
+                        option.value = camera.deviceId;
+                        option.text = camera.label || `Cámara ${index + 1}`;
+                        cameraSelect.appendChild(option);
+                    });
+                }
+            } catch (err) {
+                console.error('Error al detectar cámaras:', err);
+            }
+        }
+        
+        // Iniciar cámara
+        async function startCamera(deviceId = null) {
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: deviceId ? undefined : { ideal: 'environment' },
+                        deviceId: deviceId ? { exact: deviceId } : undefined,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true);
+                await video.play();
+                
+                scanning = true;
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+                status.textContent = 'Cámara activa - Apunta al código QR';
+                status.style.color = '#28a745';
+                
+                requestAnimationFrame(tick);
+            } catch (err) {
+                console.error('Error al acceder a la cámara:', err);
+                status.innerHTML = `<div class="error-message">⚠️ No se pudo acceder a la cámara. Verifica los permisos.</div>`;
+            }
+        }
+        
+        // Detener cámara
+        function stopCamera() {
+            scanning = false;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+            status.textContent = 'Cámara detenida';
+            status.style.color = '#666';
+        }
+        
+        // Escanear QR
+        function tick() {
+            if (!scanning) return;
+            
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (code) {
+                    handleQRCode(code.data);
+                    return;
+                }
+            }
+            
+            requestAnimationFrame(tick);
+        }
+        
+        // Procesar código QR
+        function handleQRCode(data) {
+            scanning = false;
+            stopCamera();
+            
+            // Mostrar resultado
+            resultInfo.innerHTML = `<p><strong>Información del QR:</strong></p><p>${data}</p>`;
+            resultContainer.classList.add('active');
+            
+            // Vibrar si está disponible
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+            }
+        }
+        
+        // Escanear de nuevo
+        function scanAgain() {
+            resultContainer.classList.remove('active');
+            startCamera();
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', () => {
+            const selectedCamera = cameraSelect.value;
+            startCamera(selectedCamera || null);
+        });
+        
+        stopBtn.addEventListener('click', stopCamera);
+        
+        cameraSelect.addEventListener('change', () => {
+            if (scanning) {
+                stopCamera();
+                setTimeout(() => startCamera(cameraSelect.value), 100);
+            }
+        });
+        
+        // Inicializar
+        getCameras();
+        
+        // Prevenir que la pantalla se apague
+        if ('wakeLock' in navigator) {
+            let wakeLock = null;
+            const requestWakeLock = async () => {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) {
+                    console.log('Wake Lock error:', err);
+                }
+            };
+            startBtn.addEventListener('click', requestWakeLock);
+        }
+    </script>
+</body>
+</html>
